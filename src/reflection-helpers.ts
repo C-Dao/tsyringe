@@ -6,6 +6,7 @@ import Transform from "./types/transform";
 
 export const INJECTION_TOKEN_METADATA_KEY = "injectionTokens";
 
+/** 获取指定构造器的参数信息 */
 export function getParamInfo(target: constructor<any>): ParamInfo[] {
   const params: any[] = Reflect.getMetadata("design:paramtypes", target) || [];
   const injectionTokens: Dictionary<InjectionToken<any>> =
@@ -17,24 +18,35 @@ export function getParamInfo(target: constructor<any>): ParamInfo[] {
   return params;
 }
 
+/** 参数装饰器工厂，初始化注入依赖参数的描述器 */
 export function defineInjectionTokenMetadata(
+  //  InjectionToken<any>,要注入依赖的参数 token
   data: any,
-  transform?: {transformToken: InjectionToken<Transform<any, any>>; args: any[]}
+  transform?: {
+    transformToken: InjectionToken<Transform<any, any>>;
+    args: any[];
+  }
 ): (target: any, propertyKey: string | symbol, parameterIndex: number) => any {
+  // 返回参数装饰器
   return function(
     target: any,
     _propertyKey: string | symbol,
     parameterIndex: number
   ): any {
+    // 获取被注入构造器的参数描述器 map
     const descriptors: Dictionary<InjectionToken<any> | TokenDescriptor> =
       Reflect.getOwnMetadata(INJECTION_TOKEN_METADATA_KEY, target) || {};
+    // 如果是 injectTransform 和 injectAllTransform，则生成 transformDescriptor 并设置到 descriptors 中
     descriptors[parameterIndex] = transform
       ? {
           token: data,
           transform: transform.transformToken,
           transformArgs: transform.args || []
         }
-      : data;
+      : // 否则直接设置到 descriptors 中
+        data;
+
+    // 回写覆盖原来的描述器 map
     Reflect.defineMetadata(INJECTION_TOKEN_METADATA_KEY, descriptors, target);
   };
 }
