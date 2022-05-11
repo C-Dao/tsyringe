@@ -8,9 +8,12 @@ export const INJECTION_TOKEN_METADATA_KEY = "injectionTokens";
 
 /** 获取指定构造器的参数信息 */
 export function getParamInfo(target: constructor<any>): ParamInfo[] {
+  // 获取依赖被注入方的参数信息 [Ctor1, Ctor2, Ctor3]
   const params: any[] = Reflect.getMetadata("design:paramtypes", target) || [];
+  // 获取通过 inject， injectAll， injectWithTransform，injectAllWithTransform 装饰器注入的 token 依赖类构造器
   const injectionTokens: Dictionary<InjectionToken<any>> =
     Reflect.getOwnMetadata(INJECTION_TOKEN_METADATA_KEY, target) || {};
+  // 对 params 进行替换，替换注入的 token 为实际的依赖类构造器
   Object.keys(injectionTokens).forEach(key => {
     params[+key] = injectionTokens[key];
   });
